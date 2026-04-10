@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+
+model Job {
+  id String @id @default(uuid()) @unique
+  action String
+  status String @default("pending")
+  data Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model NFT {
+  id String @id @default(uuid()) @unique
+  txHash String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+
+
+model User {
+  id String @default(uuid()) @unique
+  name String
+  email String @unique
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  account Account?
+  @@id([id])
+}
+
+model Account {
+  id String @id @default(uuid()) @unique
+  currency String @default("VND")
+  userId String @unique
+  user User @relation(fields: [userId], references: [id]) 
+  entries Entry[]
+}
+
+
+
+model Transaction {
+  id String @id @default(uuid()) @unique
+  type String
+  status String
+  message String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Entry {
+  id String @id @default(uuid()) @unique
+  transactionId String
+  accountId String
+  account Account @relation(fields: [accountId], references: [id])
+  amount Decimal
+  role String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
