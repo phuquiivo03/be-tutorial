@@ -45,4 +45,5 @@ export const ErrorMessages = {
   ENTRY_CREATED_AT_INVALID: "createdAt must be a valid date",
   ENTRY_UPDATED_AT_REQUIRED: "updatedAt is required",
   ENTRY_UPDATED_AT_INVALID: "updatedAt must be a valid date",
+  FAILED_TO_VALID_TRANSFER: "Failed to validate transfer",
 };

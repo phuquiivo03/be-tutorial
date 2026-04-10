@@ -1,7 +1,6 @@
 import { MQActions } from "../../infrastructure/rabbitmq/constants";
 
 export interface CreateJobDTO {
-  id: String;
   data: JSON;
   action: MQActions;
   status?: string;

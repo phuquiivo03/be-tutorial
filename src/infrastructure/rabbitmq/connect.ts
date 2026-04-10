@@ -13,26 +13,25 @@ export async function connectQueue() {
   // DLX
   await channel.assertExchange(QueueName.DLX, "direct", { durable: true });
   // DLQ
-  await channel.assertQueue(QueueName.DLQ, { durable: true });
-  await channel.bindQueue(QueueName.DLQ, QueueName.DLX, RoutingKey.DLQ);
+  await queueFactory(channel, QueueName.DLQ, RoutingKey.DLQ, { durable: true });
   // resize queue
-  await channel.assertQueue(QueueName.RESIZE, {
+  await queueFactory(channel, QueueName.RESIZE, RoutingKey.RESIZE, {
     durable: true,
     deadLetterExchange: QueueName.DLX,
     deadLetterRoutingKey: RoutingKey.DLQ,
   });
-  await channel.bindQueue(
-    QueueName.RESIZE,
-    QueueName.EXCHANGE,
-    RoutingKey.RESIZE,
-  );
   // web3 queue
-  await channel.assertQueue(QueueName.WEB3, {
+  await queueFactory(channel, QueueName.WEB3, RoutingKey.MINT, {
     durable: true,
     deadLetterExchange: QueueName.DLX,
     deadLetterRoutingKey: RoutingKey.DLQ,
   });
-  await channel.bindQueue(QueueName.WEB3, QueueName.EXCHANGE, RoutingKey.MINT);
+  // transaction queue
+  await queueFactory(channel, QueueName.TRANSACTION, RoutingKey.TRANSFER, {
+    durable: true,
+    deadLetterExchange: QueueName.DLX,
+    deadLetterRoutingKey: RoutingKey.DLQ,
+  });
   // retry queue
   await channel.assertQueue(QueueName.MINT_RETRY, {
     durable: true,
@@ -46,5 +45,22 @@ export async function connectQueue() {
     deadLetterExchange: QueueName.EXCHANGE,
     deadLetterRoutingKey: RoutingKey.RESIZE,
   });
+
+  await channel.assertQueue(QueueName.TRANSFER_RETRY, {
+    durable: true,
+    messageTtl: 5000,
+    deadLetterExchange: QueueName.EXCHANGE,
+    deadLetterRoutingKey: RoutingKey.TRANSFER,
+  });
   return channel;
+}
+
+async function queueFactory(
+  channel: amqp.Channel,
+  queueName: QueueName,
+  routingKey: RoutingKey,
+  options?: amqp.Options.AssertQueue,
+) {
+  await channel.assertQueue(queueName, options);
+  await channel.bindQueue(queueName, QueueName.EXCHANGE, routingKey);
 }

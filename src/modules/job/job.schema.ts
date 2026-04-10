@@ -6,7 +6,6 @@ export const jobSchema = z.object({
   data: z.any(),
   action: z.enum(Object.values(MQActions)),
   status: z.enum(Object.values(JobStatus)),
-  x: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

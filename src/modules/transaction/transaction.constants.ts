@@ -24,3 +24,8 @@ export const TransferRoles = {
 };
 
 export const defaultCurrency = currencies.VND;
+export const TransactionStatus = {
+  PENDING: "pending",
+  COMPLETED: "completed",
+  FAILED: "failed",
+};

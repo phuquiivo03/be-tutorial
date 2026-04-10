@@ -5,12 +5,12 @@ import { ErrorMessages } from "../../shared/errors/error-message";
 import { jobSchema } from "./job.schema";
 import { parseOrThrow } from "../../utils";
 import { Job } from "./job.type";
+import { publishMessage } from "../../infrastructure/rabbitmq/helper";
 export class JobService {
   async create(data: CreateJobDTO): Promise<Job> {
     try {
       const createdJob = await prisma.job.create({
         data: {
-          id: data.id as string,
           // Nếu data.data là undefined, lưu một object rỗng {} vào database
           data: (data.data || {}) as unknown as Prisma.InputJsonValue,
           action: data.action,
@@ -20,6 +20,25 @@ export class JobService {
 
       return parseOrThrow(jobSchema, createdJob);
     } catch (error) {
+      throw new Error(ErrorMessages.FAILED_TO_CREATE_JOB, { cause: error });
+    }
+  }
+
+  async createAnndPublish(data: CreateJobDTO): Promise<Job> {
+    try {
+      await publishMessage(data.action, JSON.stringify(data.data));
+      const createdJob = await prisma.job.create({
+        data: {
+          // Nếu data.data là undefined, lưu một object rỗng {} vào database
+          data: (data.data || {}) as unknown as Prisma.InputJsonValue,
+          action: data.action,
+          status: data.status || JobStatus.PENDING,
+        },
+      });
+
+      return parseOrThrow(jobSchema, createdJob);
+    } catch (error) {
+      console.error("Error in createAnndPublish", error.message);
       throw new Error(ErrorMessages.FAILED_TO_CREATE_JOB, { cause: error });
     }
   }

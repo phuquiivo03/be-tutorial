@@ -1,6 +1,7 @@
 import express from "express";
 import router from "./router";
 import "dotenv/config";
+import "./workers/";
 import { requestIdMiddleware, requestLogger } from "./shared/middlewares";
 
 const app = express();

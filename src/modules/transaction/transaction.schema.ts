@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { ErrorMessages } from "../../shared/errors/error-message";
-import { TransferRoles } from "./transaction.constants";
+import { TransactionStatus, TransferRoles } from "./transaction.constants";
 
 const requiredOrInvalid =
   (requiredMessage: string, invalidMessage: string) =>
@@ -52,7 +52,7 @@ export const TransactionSchema = z.object({
       ErrorMessages.TRANSACTION_TYPE_INVALID,
     ),
   }),
-  status: z.enum(["pending", "success", "failed"] as const, {
+  status: z.enum([TransactionStatus.PENDING, TransactionStatus.COMPLETED, TransactionStatus.FAILED] as const, {
     error: requiredOrInvalid(
       ErrorMessages.TRANSACTION_STATUS_REQUIRED,
       ErrorMessages.TRANSACTION_STATUS_INVALID,
