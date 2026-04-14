@@ -16,6 +16,16 @@ class EntryService {
     return parseOrThrow<Entry>(EntrySchema, entry);
   }
 
+  async createMany(
+    data: CreateEntry[],
+    tx?: Prisma.TransactionClient,
+  ): Promise<number> {
+    const entries = await (tx || prisma).entry.createMany({
+      data,
+    });
+    return entries.count;
+  }
+
   async get(entryId: string): Promise<Entry> {
     const entry = await prisma.entry.findUnique({
       where: { id: entryId },

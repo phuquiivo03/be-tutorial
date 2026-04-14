@@ -14,12 +14,16 @@ import { ErrorMessages } from "../shared/errors/error-message";
 import { handleRetry, handlePendingJob, handleCancelJob } from "./helper";
 import JobService from "../modules/job/job.service";
 import { JobStatus } from "../modules/job/job.dto";
-import { JobHelper } from "../modules/job";
 import prisma from "../infrastructure/prisma/connect";
+
 export const transferWorker = async () => {
   const channel = await connectQueue();
   channel.consume(QueueName.TRANSACTION, async (msg) => {
     await handleError(msg as amqp.Message, channel, async () => {
+      const random = Math.random(); // simulate error -> retry job
+      if (random < 0.5) {
+        throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
+      }
       const data = JSON.parse(msg?.content.toString() || "{}") as Job;
       //block job
       const updated = await JobService.updateAndCount(
@@ -51,6 +55,7 @@ async function handleError(
     console.error("Error in handleError", error.message);
     switch (error.message) {
       case ErrorMessages.FAILED_TO_CREATE_ENTRY:
+        console.error("Retry job");
         handleRetry(msg, channel, QueueName.TRANSFER_RETRY);
         break;
       case ErrorMessages.FAILED_TO_CREATE_JOB:
@@ -77,19 +82,24 @@ async function processTransaction(data: Job) {
     const { senderAccount, receiverAccount } =
       await TransactionHelper.validTRansfer(transferData);
     const transaction = await TransactionService.create(transferData, tx);
-    const senderEntry = await EntryService.create({
-      transactionId: transaction.id,
-      accountId: senderAccount.id,
-      amount: Prisma.Decimal(-transferData.amount),
-      role: TransferRoles.SENDER,
-    });
-    const receiverEntry = await EntryService.create({
-      transactionId: transaction.id,
-      accountId: receiverAccount.id,
-      amount: Prisma.Decimal(transferData.amount.toString()),
-      role: TransferRoles.RECEIVER,
-    });
-    if (!senderEntry || !receiverEntry) {
+    const entries = await EntryService.createMany(
+      [
+        {
+          transactionId: transaction.id,
+          accountId: senderAccount.id,
+          amount: Prisma.Decimal(-transferData.amount),
+          role: TransferRoles.SENDER,
+        },
+        {
+          transactionId: transaction.id,
+          accountId: receiverAccount.id,
+          amount: Prisma.Decimal(transferData.amount.toString()),
+          role: TransferRoles.RECEIVER,
+        },
+      ],
+      tx,
+    );
+    if (entries !== 2) {
       throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
     }
     //update transaction status to success
