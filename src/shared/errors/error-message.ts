@@ -46,4 +46,11 @@ export const ErrorMessages = {
   ENTRY_UPDATED_AT_REQUIRED: "updatedAt is required",
   ENTRY_UPDATED_AT_INVALID: "updatedAt must be a valid date",
   FAILED_TO_VALID_TRANSFER: "Failed to validate transfer",
+  FAILED_TO_FIND_ACCOUNT: "Failed to find account",
+  INSUFFICIENT_BALANCE: "Insufficient balance",
+  FAILED_TO_CREATE_ENTRY: "Failed to create entry",
+  JOB_IS_COMPLETED: "Job is completed",
+  JOB_IS_FAILED: "Job is failed",
+  UNDEFINED_JOB: "Job is undefined",
+  JOB_UPDATED_FAILED: "Job updated failed",
 };

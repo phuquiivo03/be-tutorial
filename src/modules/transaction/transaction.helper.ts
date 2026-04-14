@@ -13,13 +13,13 @@ class TransactionHelper {
       const senderAccount = await AccountService.findByUserId(data.fromUserId);
       const receiverAccount = await AccountService.findByUserId(data.toUserId);
       if (!senderAccount || !receiverAccount) {
-        throw new Error("Sender or receiver account not found!");
+        throw new Error(ErrorMessages.FAILED_TO_FIND_ACCOUNT);
       }
       const senderBalance = await EntryService.getBalanceByAccountId(
         senderAccount.id,
       );
       if (senderBalance.lessThan(Prisma.Decimal(data.amount.toString()))) {
-        throw new Error("Insufficient balance!");
+        throw new Error(ErrorMessages.INSUFFICIENT_BALANCE);
       }
       return { senderAccount, receiverAccount };
     } catch (error) {

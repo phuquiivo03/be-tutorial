@@ -26,7 +26,6 @@ export class JobService {
 
   async createAnndPublish(data: CreateJobDTO): Promise<Job> {
     try {
-      await publishMessage(data.action, JSON.stringify(data.data));
       const createdJob = await prisma.job.create({
         data: {
           // Nếu data.data là undefined, lưu một object rỗng {} vào database
@@ -35,6 +34,7 @@ export class JobService {
           status: data.status || JobStatus.PENDING,
         },
       });
+      await publishMessage(data.action, JSON.stringify(createdJob));
 
       return parseOrThrow(jobSchema, createdJob);
     } catch (error) {
@@ -62,6 +62,15 @@ export class JobService {
       where: { id: jobId },
       data: { status },
     });
+  }
+
+  async updateAndCount(jobId: string, status: JobStatus): Promise<number> {
+    const updatedJob = await prisma.job.updateMany({
+      where: { id: jobId, status: JobStatus.PENDING },
+      data: { status },
+    });
+    console.log("xxxxxxxxupdatedJob:", updatedJob);
+    return updatedJob.count;
   }
 }
 

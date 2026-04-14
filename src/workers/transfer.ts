@@ -12,43 +12,32 @@ import { TransactionStatus, TransferRoles } from "../modules/transaction";
 import amqp from "amqplib";
 import { ErrorMessages } from "../shared/errors/error-message";
 import { handleRetry, handlePendingJob, handleCancelJob } from "./helper";
+import JobService from "../modules/job/job.service";
+import { JobStatus } from "../modules/job/job.dto";
+import { JobHelper } from "../modules/job";
 export const transferWorker = async () => {
   const channel = await connectQueue();
   channel.consume(QueueName.TRANSACTION, async (msg) => {
-    await handleError(
-      msg as amqp.Message,
-      channel,
-      async () => {
-        const data = JSON.parse(msg?.content.toString() || "{}") as Job;
-        console.log("excute job:", data);
-        const transferData = parseOrThrow<Transfer>(transferSchema, data);
-        const { senderAccount, receiverAccount } =
-          await TransactionHelper.validTRansfer(transferData);
-        const transaction = await TransactionService.create(transferData);
-        const senderEntry = await EntryService.create({
-          transactionId: transaction.id,
-          accountId: senderAccount.id,
-          amount: Prisma.Decimal(-transferData.amount),
-          role: TransferRoles.SENDER,
-        });
-        const receiverEntry = await EntryService.create({
-          transactionId: transaction.id,
-          accountId: receiverAccount.id,
-          amount: Prisma.Decimal(transferData.amount.toString()),
-          role: TransferRoles.RECEIVER,
-        });
-        if (!senderEntry || !receiverEntry) {
-          throw new Error("Transaction Failed!");
-        }
-        //update transaction status to success
-        await TransactionService.update(
-          transaction.id,
-          TransactionStatus.COMPLETED,
-        );
-        // ack the message
-        channel.ack(msg as amqp.Message);
-      },
-    );
+    await handleError(msg as amqp.Message, channel, async () => {
+      const data = JSON.parse(msg?.content.toString() || "{}") as Job;
+      const updated = await JobService.updateAndCount(
+        data.id,
+        JobStatus.PROCESSING,
+      );
+      if (updated === 0) throw new Error(ErrorMessages.JOB_UPDATED_FAILED);
+
+      const job = await JobService.get(data.id);
+
+      // check if job is pending
+      JobHelper.jobPeding(job);
+      // update job status to processing
+      await JobService.update(job.id, JobStatus.PROCESSING);
+      await processTransaction(job);
+      // update job status to completed
+      await JobService.update(job.id, JobStatus.COMPLETED);
+      // ack the message
+      channel.ack(msg as amqp.Message);
+    });
   });
 };
 
@@ -61,8 +50,9 @@ async function handleError(
     return await Promise.resolve(callback());
   } catch (error) {
     const data = JSON.parse(msg.content.toString());
+    console.error("Error in handleError", error.message);
     switch (error.message) {
-      case ErrorMessages.FAILED_TO_MINT_NFT:
+      case ErrorMessages.FAILED_TO_CREATE_ENTRY:
         handleRetry(msg, channel, QueueName.TRANSFER_RETRY);
         break;
       case ErrorMessages.FAILED_TO_CREATE_JOB:
@@ -81,4 +71,28 @@ async function handleError(
         break;
     }
   }
+}
+
+async function processTransaction(data: Job) {
+  const transferData = parseOrThrow<Transfer>(transferSchema, data.data);
+  const { senderAccount, receiverAccount } =
+    await TransactionHelper.validTRansfer(transferData);
+  const transaction = await TransactionService.create(transferData);
+  const senderEntry = await EntryService.create({
+    transactionId: transaction.id,
+    accountId: senderAccount.id,
+    amount: Prisma.Decimal(-transferData.amount),
+    role: TransferRoles.SENDER,
+  });
+  const receiverEntry = await EntryService.create({
+    transactionId: transaction.id,
+    accountId: receiverAccount.id,
+    amount: Prisma.Decimal(transferData.amount.toString()),
+    role: TransferRoles.RECEIVER,
+  });
+  if (!senderEntry || !receiverEntry) {
+    throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
+  }
+  //update transaction status to success
+  await TransactionService.update(transaction.id, TransactionStatus.COMPLETED);
 }
