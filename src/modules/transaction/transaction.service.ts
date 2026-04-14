@@ -2,10 +2,14 @@ import prisma from "../../infrastructure/prisma/connect";
 import { Transaction, Transfer } from "./transaction.type";
 import { TransactionSchema } from "./transaction.schema";
 import { parseOrThrow } from "../../utils";
+import { Prisma } from "@prisma/client";
 
 class TransactionService {
-  async create(data: Transfer): Promise<Transaction> {
-    const transaction = await prisma.transaction.create({
+  async create(
+    data: Transfer,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Transaction> {
+    const transaction = await (tx || prisma).transaction.create({
       data: {
         type: "transfer",
         status: "pending",
@@ -24,8 +28,12 @@ class TransactionService {
     });
   }
 
-  async update(transactionId: string, status: string) {
-    await prisma.transaction.update({
+  async update(
+    transactionId: string,
+    status: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    await (tx || prisma).transaction.update({
       where: { id: transactionId },
       data: { status },
     });

@@ -57,8 +57,12 @@ export class JobService {
     }
   }
 
-  async update(jobId: string, status: JobStatus): Promise<void> {
-    await prisma.job.update({
+  async update(
+    jobId: string,
+    status: JobStatus,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    await (tx || prisma).job.update({
       where: { id: jobId },
       data: { status },
     });
@@ -69,7 +73,6 @@ export class JobService {
       where: { id: jobId, status: JobStatus.PENDING },
       data: { status },
     });
-    console.log("xxxxxxxxupdatedJob:", updatedJob);
     return updatedJob.count;
   }
 }

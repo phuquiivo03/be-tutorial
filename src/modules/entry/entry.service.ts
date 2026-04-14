@@ -4,8 +4,11 @@ import { EntrySchema, CreateEntry, Entry } from "../transaction";
 import { Prisma } from "@prisma/client";
 
 class EntryService {
-  async create(data: CreateEntry): Promise<Entry> {
-    const entry = await prisma.entry.create({
+  async create(
+    data: CreateEntry,
+    tx?: Prisma.TransactionClient,
+  ): Promise<Entry> {
+    const entry = await (tx || prisma).entry.create({
       data: {
         ...data,
       },

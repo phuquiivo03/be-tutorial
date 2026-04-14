@@ -15,28 +15,26 @@ import { handleRetry, handlePendingJob, handleCancelJob } from "./helper";
 import JobService from "../modules/job/job.service";
 import { JobStatus } from "../modules/job/job.dto";
 import { JobHelper } from "../modules/job";
+import prisma from "../infrastructure/prisma/connect";
 export const transferWorker = async () => {
   const channel = await connectQueue();
   channel.consume(QueueName.TRANSACTION, async (msg) => {
     await handleError(msg as amqp.Message, channel, async () => {
       const data = JSON.parse(msg?.content.toString() || "{}") as Job;
+      //block job
       const updated = await JobService.updateAndCount(
         data.id,
         JobStatus.PROCESSING,
       );
+      // if job is not updated, throw error (re-excute job)
       if (updated === 0) throw new Error(ErrorMessages.JOB_UPDATED_FAILED);
-
       const job = await JobService.get(data.id);
-
-      // check if job is pending
-      JobHelper.jobPeding(job);
-      // update job status to processing
-      await JobService.update(job.id, JobStatus.PROCESSING);
       await processTransaction(job);
       // update job status to completed
       await JobService.update(job.id, JobStatus.COMPLETED);
       // ack the message
       channel.ack(msg as amqp.Message);
+      console.log("Transaction completed");
     });
   });
 };
@@ -75,24 +73,30 @@ async function handleError(
 
 async function processTransaction(data: Job) {
   const transferData = parseOrThrow<Transfer>(transferSchema, data.data);
-  const { senderAccount, receiverAccount } =
-    await TransactionHelper.validTRansfer(transferData);
-  const transaction = await TransactionService.create(transferData);
-  const senderEntry = await EntryService.create({
-    transactionId: transaction.id,
-    accountId: senderAccount.id,
-    amount: Prisma.Decimal(-transferData.amount),
-    role: TransferRoles.SENDER,
+  await prisma.$transaction(async (tx) => {
+    const { senderAccount, receiverAccount } =
+      await TransactionHelper.validTRansfer(transferData);
+    const transaction = await TransactionService.create(transferData, tx);
+    const senderEntry = await EntryService.create({
+      transactionId: transaction.id,
+      accountId: senderAccount.id,
+      amount: Prisma.Decimal(-transferData.amount),
+      role: TransferRoles.SENDER,
+    });
+    const receiverEntry = await EntryService.create({
+      transactionId: transaction.id,
+      accountId: receiverAccount.id,
+      amount: Prisma.Decimal(transferData.amount.toString()),
+      role: TransferRoles.RECEIVER,
+    });
+    if (!senderEntry || !receiverEntry) {
+      throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
+    }
+    //update transaction status to success
+    await TransactionService.update(
+      transaction.id,
+      TransactionStatus.COMPLETED,
+      tx,
+    );
   });
-  const receiverEntry = await EntryService.create({
-    transactionId: transaction.id,
-    accountId: receiverAccount.id,
-    amount: Prisma.Decimal(transferData.amount.toString()),
-    role: TransferRoles.RECEIVER,
-  });
-  if (!senderEntry || !receiverEntry) {
-    throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
-  }
-  //update transaction status to success
-  await TransactionService.update(transaction.id, TransactionStatus.COMPLETED);
 }
