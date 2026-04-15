@@ -14,7 +14,7 @@ export const transfer = async (req: Request, res: Response) => {
     });
     res.status(200).json({
       message: "Transaction Successful!",
-      data: { job },
+      data: { ...job },
     });
   } catch (error) {
     res.status(500).json({

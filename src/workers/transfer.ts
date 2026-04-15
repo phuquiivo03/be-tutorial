@@ -11,19 +11,29 @@ import { Prisma } from "@prisma/client";
 import { TransactionStatus, TransferRoles } from "../modules/transaction";
 import amqp from "amqplib";
 import { ErrorMessages } from "../shared/errors/error-message";
-import { handleRetry, handlePendingJob, handleCancelJob } from "./helper";
+import {
+  handleRetry,
+  handlePendingJob,
+  handleCancelJob,
+  handleDeadLockError,
+} from "./helper";
 import JobService from "../modules/job/job.service";
 import { JobStatus } from "../modules/job/job.dto";
 import prisma from "../infrastructure/prisma/connect";
+import { AccountService } from "../modules/account";
+import { ErrorCodes } from "../shared/errors/error-code";
+import { AppError, normalizeError } from "../shared/errors/Error";
+import { errorStrategies } from "./error.strategies";
 
 export const transferWorker = async () => {
   const channel = await connectQueue();
   channel.consume(QueueName.TRANSACTION, async (msg) => {
     await handleError(msg as amqp.Message, channel, async () => {
       const random = Math.random(); // simulate error -> retry job
-      if (random < 0.5) {
-        throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
-      }
+      console.log(random);
+      // if (random < 0.5) {
+      //   throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
+      // }
       const data = JSON.parse(msg?.content.toString() || "{}") as Job;
       //block job
       const updated = await JobService.updateAndCount(
@@ -31,7 +41,11 @@ export const transferWorker = async () => {
         JobStatus.PROCESSING,
       );
       // if job is not updated, throw error (re-excute job)
-      if (updated === 0) throw new Error(ErrorMessages.JOB_UPDATED_FAILED);
+      if (updated === 0)
+        throw new AppError(
+          ErrorCodes.JOB_UPDATED_FAILED,
+          ErrorMessages.JOB_UPDATED_FAILED,
+        );
       const job = await JobService.get(data.id);
       await processTransaction(job);
       // update job status to completed
@@ -48,31 +62,20 @@ async function handleError(
   channel: amqp.Channel,
   callback: () => Promise<void>,
 ) {
+  const data = JSON.parse(msg.content.toString());
   try {
     return await Promise.resolve(callback());
   } catch (error) {
-    const data = JSON.parse(msg.content.toString());
-    console.error("Error in handleError", error.message);
-    switch (error.message) {
-      case ErrorMessages.FAILED_TO_CREATE_ENTRY:
-        console.error("Retry job");
-        handleRetry(msg, channel, QueueName.TRANSFER_RETRY);
-        break;
-      case ErrorMessages.FAILED_TO_CREATE_JOB:
-        handlePendingJob(
-          msg,
-          channel,
-          data.id,
-          async () => {
-            await TransactionService.create(data);
-          },
-          QueueName.TRANSFER_RETRY,
-        );
-        break;
-      default:
-        handleCancelJob(data.id, msg, channel);
-        break;
-    }
+    const err: AppError = normalizeError(error);
+    console.error("Error in handleError", err.message, err.code);
+
+    const strategy = errorStrategies[err.code] || errorStrategies["UNKNOWN"];
+    await strategy({
+      channel,
+      msg,
+      data,
+      retryQueue: QueueName.TRANSFER_RETRY,
+    });
   }
 }
 
@@ -81,6 +84,9 @@ async function processTransaction(data: Job) {
   await prisma.$transaction(async (tx) => {
     const { senderAccount, receiverAccount } =
       await TransactionHelper.validTRansfer(transferData);
+    // lock accounts
+    await AccountService.lockAccount(senderAccount.id, tx);
+    await AccountService.lockAccount(receiverAccount.id, tx);
     const transaction = await TransactionService.create(transferData, tx);
     const entries = await EntryService.createMany(
       [
@@ -100,7 +106,10 @@ async function processTransaction(data: Job) {
       tx,
     );
     if (entries !== 2) {
-      throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
+      throw new AppError(
+        ErrorCodes.FAILED_TO_CREATE_ENTRY,
+        ErrorMessages.FAILED_TO_CREATE_ENTRY,
+      );
     }
     //update transaction status to success
     await TransactionService.update(

@@ -5,6 +5,7 @@ import JobService from "../modules/job/job.service";
 import { JobStatus } from "../modules/job/job.dto";
 import amqp from "amqplib";
 import { Job } from "../modules/job/job.type";
+import { ErrorCodes } from "../shared/errors/error-code";
 export async function handleRetry(
   msg: amqp.Message,
   channel: amqp.Channel,
@@ -55,4 +56,15 @@ export async function handleCancelJob(
   console.log("Removing job:", jobId);
   await JobService.update(jobId, JobStatus.FAILED);
   channel.nack(msg, false, false);
+}
+
+export async function handleDeadLockError(
+  error: Error,
+  channel: amqp.Channel,
+  msg: amqp.Message,
+  retryQueueName: QueueName,
+) {
+  if (error.message.includes(ErrorCodes.DEAD_LOCK)) {
+    handleRetry(msg, channel, retryQueueName);
+  }
 }

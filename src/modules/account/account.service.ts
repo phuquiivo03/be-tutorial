@@ -3,6 +3,9 @@ import { parseOrThrow } from "../../utils";
 import { accountSchema } from "./account.schema";
 import { Account } from "./account.type";
 import { ErrorMessages } from "../../shared/errors/error-message";
+import { Prisma } from "@prisma/client";
+import { AppError } from "../../shared/errors/Error";
+import { ErrorCodes } from "../../shared/errors/error-code";
 
 class AccountService {
   async createAccount(userId: string, currency: string) {
@@ -12,7 +15,11 @@ class AccountService {
       });
       return parseOrThrow<Account>(accountSchema, account);
     } catch (error) {
-      throw new Error(ErrorMessages.FAILED_TO_CREATE_ACCOUNT, { cause: error });
+      throw new AppError(
+        ErrorCodes.FAILED_TO_CREATE_ACCOUNT,
+        ErrorMessages.FAILED_TO_CREATE_ACCOUNT,
+        false,
+      );
     }
   }
 
@@ -28,6 +35,11 @@ class AccountService {
       where: { userId },
     });
     return parseOrThrow<Account>(accountSchema, account);
+  }
+  async lockAccount(id: string, tx: Prisma.TransactionClient): Promise<void> {
+    await tx.$queryRaw`
+            SELECT * FROM "Account" WHERE id = ${id} FOR UPDATE
+          `;
   }
 }
 

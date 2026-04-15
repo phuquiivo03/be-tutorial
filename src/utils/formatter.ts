@@ -11,5 +11,5 @@ export const convertMoney = (
     .div(currency.breakdown)
     .toString()
     .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return `${formattedAmount} ${currency.symbol}`;
+  return `${formattedAmount}`;
 };

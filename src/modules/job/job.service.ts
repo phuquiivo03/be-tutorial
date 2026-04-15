@@ -23,6 +23,12 @@ export class JobService {
       throw new Error(ErrorMessages.FAILED_TO_CREATE_JOB, { cause: error });
     }
   }
+  async find(id: string): Promise<Job> {
+    const job = await prisma.job.findUnique({
+      where: { id },
+    });
+    return parseOrThrow(jobSchema, job);
+  }
 
   async createAnndPublish(data: CreateJobDTO): Promise<Job> {
     try {

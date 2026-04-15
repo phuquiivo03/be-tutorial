@@ -14,7 +14,7 @@ export const getAccountBalance = async (req: Request, res: Response) => {
     }
     const balance = await EntryService.getBalanceByAccountId(accountId);
     const displayBalance = convertMoney(balance, account.currency);
-    res.status(200).json({ balance: displayBalance });
+    res.status(200).json({ data: { balance: displayBalance } });
   } catch (error) {
     return res.status(500).json({ message: (error as Error).message });
   }
