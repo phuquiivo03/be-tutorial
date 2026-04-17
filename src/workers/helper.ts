@@ -5,12 +5,13 @@ import JobService from "../modules/job/job.service";
 import { JobStatus } from "../modules/job/job.dto";
 import amqp from "amqplib";
 import { Job } from "../modules/job/job.type";
-import { ErrorCodes } from "../shared/errors/error-code";
+import { ErrorCodes } from "../shared/errors/errorCode";
 export async function handleRetry(
   msg: amqp.Message,
   channel: amqp.Channel,
   retryQueueName: QueueName,
 ) {
+  console.log("Retrying:", retryQueueName);
   try {
     const data = JSON.parse(msg.content.toString());
     const retries = msg.properties.headers?.["x-retry-count"] || 0;

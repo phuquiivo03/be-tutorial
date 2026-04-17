@@ -1,23 +1,42 @@
-import { ErrorCodes } from "./error-code";
-import { ErrorMessages } from "./error-message";
-
+import { ErrorCodes } from "./errorCode";
+import { ErrorMessages } from "./errorMessage";
+import { ErrorStrategyCodes } from "./errorCode";
+import { ErrorCodeValues, ErrorStrategyValues } from "./error.type";
 export class AppError extends Error {
   public code: string;
   public retryable: boolean;
-
-  constructor(code: string, message: string, retryable = false) {
+  public isOperational: boolean;
+  public statusCode: number;
+  constructor(
+    code: string,
+    message: string,
+    retryable = false,
+    isOperational = true,
+    statusCode = 500,
+  ) {
     super(message);
     this.code = code;
     this.retryable = retryable;
+    this.isOperational = isOperational;
+    this.statusCode = statusCode;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
-export function normalizeError(err: any): AppError {
-  // Prisma deadlock
-  if (err.code === "P2010" && err.message.includes(ErrorCodes.DEAD_LOCK)) {
-    return new AppError(ErrorCodes.DEAD_LOCK, ErrorMessages.DEAD_LOCK);
+export class BadRequestError extends AppError {
+  constructor(code: string, message: string) {
+    super(code, message, false, false, 400);
   }
+}
 
-  // fallback
-  return new AppError("UNKNOWN", err.message, false);
+export class NotFoundError extends AppError {
+  constructor(code: string, message: string) {
+    super(code, message, false, false, 404);
+  }
+}
+
+export class InternalServerError extends AppError {
+  constructor(code: string, message: string) {
+    super(code, message, false, false, 500);
+  }
 }

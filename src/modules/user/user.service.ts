@@ -2,7 +2,7 @@ import prisma from "../../infrastructure/prisma/connect";
 import { CreateUserInput, UpdateUserInput, User } from "./user.type";
 import { parseOrThrow } from "../../utils";
 import { userSchema } from "./user.schema";
-import { ErrorMessages } from "../../shared/errors/error-message";
+import { ErrorMessages } from "../../shared/errors/errorMessage";
 import { defaultCurrency } from "../transaction";
 
 class UserService {

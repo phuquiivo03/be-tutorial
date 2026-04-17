@@ -10,4 +10,14 @@ export const ErrorCodes = {
   JOB_IS_FAILED: "JOB_IS_FAILED",
   UNDEFINED_JOB: "UNDEFINED_JOB",
   UNKNOWN: "UNKNOWN",
+  // App Errors
+  INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
+  BAD_REQUEST: "BAD_REQUEST",
+  NOT_FOUND: "NOT_FOUND",
+};
+
+export const ErrorStrategyCodes = {
+  RETRY_JOB: "RETRY_JOB",
+  CANCEL_JOB: "CANCEL_JOB",
+  UNKNOWN: "UNKNOWN",
 };

@@ -4,22 +4,15 @@ import JobService from "../job/job.service";
 import TransactionHelper from "./transaction.helper";
 import { MQActions } from "../../infrastructure/rabbitmq/constants";
 export const transfer = async (req: Request, res: Response) => {
-  try {
-    const data: Transfer = req.body;
-    // check sender balance
-    await TransactionHelper.validTRansfer(data);
-    const job = await JobService.createAnndPublish({
-      action: MQActions.TRANSFER,
-      data: data as unknown as JSON,
-    });
-    res.status(200).json({
-      message: "Transaction Successful!",
-      data: { ...job },
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: "Internal Server Error",
-      error: (error as Error).message,
-    });
-  }
+  const data: Transfer = req.body;
+  // check sender balance
+  await TransactionHelper.validTRansfer(data);
+  const job = await JobService.createAnndPublish({
+    action: MQActions.TRANSFER,
+    data: data as unknown as JSON,
+  });
+  res.status(200).json({
+    message: "Transaction Successful!",
+    data: { ...job },
+  });
 };

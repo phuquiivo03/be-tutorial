@@ -2,10 +2,10 @@ import prisma from "../../infrastructure/prisma/connect";
 import { parseOrThrow } from "../../utils";
 import { accountSchema } from "./account.schema";
 import { Account } from "./account.type";
-import { ErrorMessages } from "../../shared/errors/error-message";
+import { ErrorMessages } from "../../shared/errors/errorMessage";
 import { Prisma } from "@prisma/client";
 import { AppError } from "../../shared/errors/Error";
-import { ErrorCodes } from "../../shared/errors/error-code";
+import { ErrorCodes } from "../../shared/errors/errorCode";
 
 class AccountService {
   async createAccount(userId: string, currency: string) {

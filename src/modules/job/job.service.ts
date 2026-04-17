@@ -1,7 +1,7 @@
 import prisma from "../../infrastructure/prisma/connect";
 import { CreateJobDTO, JobStatus, JobDTO } from "./job.dto";
 import { Prisma } from "@prisma/client";
-import { ErrorMessages } from "../../shared/errors/error-message";
+import { ErrorMessages } from "../../shared/errors/errorMessage";
 import { jobSchema } from "./job.schema";
 import { parseOrThrow } from "../../utils";
 import { Job } from "./job.type";

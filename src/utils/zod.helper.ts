@@ -1,5 +1,5 @@
 import Zod, { ZodType } from "zod";
-import { ErrorMessages } from "../shared/errors/error-message";
+import { ErrorMessages } from "../shared/errors/errorMessage";
 export function parseOrThrow<T>(schema: Zod.ZodSchema<T>, data: unknown): T {
   const parseResult = schema.safeParse(data);
   if (!parseResult.success) {

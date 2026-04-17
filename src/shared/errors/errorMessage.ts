@@ -54,4 +54,8 @@ export const ErrorMessages = {
   UNDEFINED_JOB: "Job is undefined",
   JOB_UPDATED_FAILED: "Job updated failed",
   DEAD_LOCK: "Raw query failed. Code: `40P01`. Message: `deadlock detected`",
+  // App Errors
+  INTERNAL_SERVER_ERROR: "Internal server error",
+  BAD_REQUEST: "Bad request",
+  NOT_FOUND: "Not found",
 };

@@ -10,7 +10,7 @@ import TransactionHelper from "../modules/transaction/transaction.helper";
 import { Prisma } from "@prisma/client";
 import { TransactionStatus, TransferRoles } from "../modules/transaction";
 import amqp from "amqplib";
-import { ErrorMessages } from "../shared/errors/error-message";
+import { ErrorMessages } from "../shared/errors/errorMessage";
 import {
   handleRetry,
   handlePendingJob,
@@ -21,9 +21,13 @@ import JobService from "../modules/job/job.service";
 import { JobStatus } from "../modules/job/job.dto";
 import prisma from "../infrastructure/prisma/connect";
 import { AccountService } from "../modules/account";
-import { ErrorCodes } from "../shared/errors/error-code";
-import { AppError, normalizeError } from "../shared/errors/Error";
-import { errorStrategies } from "./error.strategies";
+import { ErrorCodes } from "../shared/errors/errorCode";
+import { AppError } from "../shared/errors/Error";
+import {
+  getErrorStrategy,
+  normalizeError,
+} from "../shared/errors/error.helper";
+import { errorStrategies } from "../shared/errors/error.strategies";
 
 export const transferWorker = async () => {
   const channel = await connectQueue();
@@ -31,9 +35,12 @@ export const transferWorker = async () => {
     await handleError(msg as amqp.Message, channel, async () => {
       const random = Math.random(); // simulate error -> retry job
       console.log(random);
-      // if (random < 0.5) {
-      //   throw new Error(ErrorMessages.FAILED_TO_CREATE_ENTRY);
-      // }
+      if (random < 0.5) {
+        throw new AppError(
+          ErrorCodes.FAILED_TO_CREATE_ENTRY,
+          ErrorMessages.FAILED_TO_CREATE_ENTRY,
+        );
+      }
       const data = JSON.parse(msg?.content.toString() || "{}") as Job;
       //block job
       const updated = await JobService.updateAndCount(
@@ -67,9 +74,9 @@ async function handleError(
     return await Promise.resolve(callback());
   } catch (error) {
     const err: AppError = normalizeError(error);
-    console.error("Error in handleError", err.message, err.code);
+    console.error("Error in handleError", err.code, "message:", err.message);
 
-    const strategy = errorStrategies[err.code] || errorStrategies["UNKNOWN"];
+    const strategy = getErrorStrategy(err.code);
     await strategy({
       channel,
       msg,

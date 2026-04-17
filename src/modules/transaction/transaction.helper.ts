@@ -3,7 +3,9 @@ import { Transfer } from "./transaction.type";
 import EntryService from "../entry/entry.service";
 import { Prisma } from "@prisma/client";
 import { Account } from "../account/account.type";
-import { ErrorMessages } from "../../shared/errors/error-message";
+import { ErrorMessages } from "../../shared/errors/errorMessage";
+import { ErrorCodes } from "../../shared/errors/errorCode";
+import { AppError, BadRequestError } from "../../shared/errors/Error";
 
 class TransactionHelper {
   async validTRansfer(
@@ -13,18 +15,24 @@ class TransactionHelper {
       const senderAccount = await AccountService.findByUserId(data.fromUserId);
       const receiverAccount = await AccountService.findByUserId(data.toUserId);
       if (!senderAccount || !receiverAccount) {
-        throw new Error(ErrorMessages.FAILED_TO_FIND_ACCOUNT);
+        throw new AppError(
+          ErrorMessages.FAILED_TO_FIND_ACCOUNT,
+          ErrorMessages.FAILED_TO_FIND_ACCOUNT,
+        );
       }
       const senderBalance = await EntryService.getBalanceByAccountId(
         senderAccount.id,
       );
       if (senderBalance.lessThan(Prisma.Decimal(data.amount.toString()))) {
-        throw new Error(ErrorMessages.INSUFFICIENT_BALANCE);
+        throw new BadRequestError(
+          ErrorCodes.INSUFFICIENT_BALANCE,
+          ErrorMessages.INSUFFICIENT_BALANCE,
+        );
       }
       return { senderAccount, receiverAccount };
     } catch (error) {
       console.error("Error in validTRansfer", error.message);
-      throw new Error(ErrorMessages.FAILED_TO_VALID_TRANSFER, { cause: error });
+      throw error;
     }
   }
 }
