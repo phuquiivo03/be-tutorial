@@ -21,7 +21,7 @@ export const strategiesDictionary: Record<string, ErrorStrategy> = {
   [ErrorCodes.FAILED_TO_CREATE_ENTRY]:
     errorStrategies[ErrorStrategyCodes.RETRY_JOB],
   [ErrorCodes.JOB_UPDATED_FAILED]:
-    errorStrategies[ErrorStrategyCodes.RETRY_JOB],
+    errorStrategies[ErrorStrategyCodes.CANCEL_JOB],
   [ErrorCodes.INSUFFICIENT_BALANCE]:
     errorStrategies[ErrorStrategyCodes.CANCEL_JOB],
 };

@@ -33,14 +33,14 @@ export const transferWorker = async () => {
   const channel = await connectQueue();
   channel.consume(QueueName.TRANSACTION, async (msg) => {
     await handleError(msg as amqp.Message, channel, async () => {
-      const random = Math.random(); // simulate error -> retry job
-      console.log(random);
-      if (random < 0.5) {
-        throw new AppError(
-          ErrorCodes.FAILED_TO_CREATE_ENTRY,
-          ErrorMessages.FAILED_TO_CREATE_ENTRY,
-        );
-      }
+      // const random = Math.random(); // simulate error -> retry job
+      // console.log(random);
+      // if (random < 0.5) {
+      //   throw new AppError(
+      //     ErrorCodes.FAILED_TO_CREATE_ENTRY,
+      //     ErrorMessages.FAILED_TO_CREATE_ENTRY,
+      //   );
+      // }
       const data = JSON.parse(msg?.content.toString() || "{}") as Job;
       //block job
       const updated = await JobService.updateAndCount(
@@ -48,6 +48,8 @@ export const transferWorker = async () => {
         JobStatus.PROCESSING,
       );
       // if job is not updated, throw error (re-excute job)
+      const j = await JobService.get(data.id);
+      console.log(j);
       if (updated === 0)
         throw new AppError(
           ErrorCodes.JOB_UPDATED_FAILED,
@@ -56,7 +58,14 @@ export const transferWorker = async () => {
       const job = await JobService.get(data.id);
       await processTransaction(job);
       // update job status to completed
+      // if worker crash here, the job will be re-excute by the worker
+      // if crash here, the job will be pending forever (not re-excute, not failed)
       await JobService.update(job.id, JobStatus.COMPLETED);
+      const random2 = Math.random(); // simulate error -> retry job
+      if (random2 < 0.7) {
+        console.log("Simulate error -> \nWorker Crashed!");
+        process.exit(1);
+      }
       // ack the message
       channel.ack(msg as amqp.Message);
       console.log("Transaction completed");
