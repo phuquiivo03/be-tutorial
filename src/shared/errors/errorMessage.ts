@@ -58,4 +58,5 @@ export const ErrorMessages = {
   INTERNAL_SERVER_ERROR: "Internal server error",
   BAD_REQUEST: "Bad request",
   NOT_FOUND: "Not found",
+  INVALID_CREADENTIAL: "Invalid auth creadential",
 };

@@ -23,10 +23,3 @@ app.use(errorHandler);
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
-
-// docker run -d \
-//   --hostname rabbit \
-//   --name rabbitmq \
-//   -p 5672:5672 \
-//   -p 15672:15672 \
-//   rabbitmq:3-management

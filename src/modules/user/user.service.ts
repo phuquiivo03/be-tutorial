@@ -4,15 +4,19 @@ import { parseOrThrow } from "../../utils";
 import { userSchema } from "./user.schema";
 import { ErrorMessages } from "../../shared/errors/errorMessage";
 import { defaultCurrency } from "../transaction";
+import { hash } from "../../utils/hashing";
+import { Prisma } from "@prisma/client";
 
 class UserService {
   async createUser(input: CreateUserInput): Promise<User> {
     try {
+      const hashedPassword = await hash(input.password);
       const user = await prisma.user.create({
         data: {
           name: input.name,
-          email: input.email,
-          password: input.password,
+          password: hashedPassword,
+          phoneNumber: input.phoneNumber,
+          email: "",
           account: {
             create: {
               currency: defaultCurrency.symbol,
@@ -24,8 +28,10 @@ class UserService {
       if (!user) {
         throw new Error(ErrorMessages.FAILED_TO_CREATE_USER);
       }
+
       return parseOrThrow<User>(userSchema, user);
     } catch (error) {
+      console.log(error);
       throw error;
     }
   }
@@ -33,6 +39,13 @@ class UserService {
   async getUser(userId: string) {
     return prisma.user.findUnique({
       where: { id: userId },
+      include: { account: true },
+    });
+  }
+
+  async find(filter: Prisma.UserWhereInput) {
+    return prisma.user.findFirst({
+      where: filter,
       include: { account: true },
     });
   }

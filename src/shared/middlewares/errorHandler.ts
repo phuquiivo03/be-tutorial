@@ -27,6 +27,7 @@ export const errorHandler = (
     });
     return;
   }
+  console.log(typeof err);
 
   res.status(500).json({
     code: ErrorCodes.INTERNAL_SERVER_ERROR,

@@ -62,10 +62,10 @@ export const transferWorker = async () => {
       // if crash here, the job will be pending forever (not re-excute, not failed)
       await JobService.update(job.id, JobStatus.COMPLETED);
       const random2 = Math.random(); // simulate error -> retry job
-      if (random2 < 0.7) {
-        console.log("Simulate error -> \nWorker Crashed!");
-        process.exit(1);
-      }
+      // if (random2 < 0.7) {
+      //   console.log("Simulate error -> \nWorker Crashed!");
+      //   process.exit(1);
+      // }
       // ack the message
       channel.ack(msg as amqp.Message);
       console.log("Transaction completed");
