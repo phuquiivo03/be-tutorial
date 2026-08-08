@@ -10,11 +10,16 @@ import { errorStrategies, strategiesDictionary } from "./error.strategies";
 export function normalizeError(err: any): AppError {
   // Prisma deadlock
   if (err.code === "P2010" && err.message.includes(ErrorCodes.DEAD_LOCK)) {
-    return new AppError(ErrorCodes.DEAD_LOCK, ErrorMessages.DEAD_LOCK, false);
+    return new AppError(
+      ErrorCodes.DEAD_LOCK,
+      ErrorMessages.DEAD_LOCK,
+      500,
+      false,
+    );
   }
 
   // fallback
-  return new AppError(err.code || "UNKNOWN", err.message, false);
+  return new AppError(err.code || "UNKNOWN", err.message, 500, false);
 }
 
 export function getErrorStrategy(code: ErrorCodeValues): ErrorStrategy {

@@ -1,7 +1,7 @@
 import express from "express";
 import router from "./router";
 import "dotenv/config";
-import "./workers/";
+import "./workers";
 import { requestIdMiddleware, requestLogger } from "./shared/middlewares";
 import cors from "cors";
 import { errorHandler } from "./shared/middlewares/errorHandler";
@@ -20,6 +20,4 @@ app.use(requestIdMiddleware);
 app.use(requestLogger);
 app.use(router);
 app.use(errorHandler);
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
-});
+export default app;
