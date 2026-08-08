@@ -23,7 +23,9 @@ export type RedisConfig = {
   username: string;
   password: string;
   expiration: number;
+  authExpiration: number;
   key: {
     refeshToken: (id: string) => string;
+    authToken: (id: string) => string;
   };
 };

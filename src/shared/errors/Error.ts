@@ -10,9 +10,9 @@ export class AppError extends Error {
   constructor(
     code: string,
     message: string,
+    statusCode = 500,
     retryable = false,
     isOperational = true,
-    statusCode = 500,
   ) {
     super(message);
     this.code = code;
@@ -25,18 +25,18 @@ export class AppError extends Error {
 
 export class BadRequestError extends AppError {
   constructor(code: string, message: string) {
-    super(code, message, false, false, 400);
+    super(code, message, 400, false, false);
   }
 }
 
 export class NotFoundError extends AppError {
   constructor(code: string, message: string) {
-    super(code, message, false, false, 404);
+    super(code, message, 404, false, false);
   }
 }
 
 export class InternalServerError extends AppError {
   constructor(code: string, message: string) {
-    super(code, message, false, false, 500);
+    super(code, message, 500, false, false);
   }
 }

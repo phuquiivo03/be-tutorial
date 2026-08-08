@@ -16,3 +16,12 @@ export const transfer = async (req: Request, res: Response) => {
     data: { ...job },
   });
 };
+
+export const findAll = async (req: Request, res: Response) => {
+  res.status(200).json({
+    status: "successfull",
+    data: {
+      field: "value",
+    },
+  });
+};

@@ -6,6 +6,7 @@ import { AppError, ErrorCodes, ErrorMessages } from "../../shared/errors";
 import JWTService from "../../utils/jwt";
 import createRedis from "../../infrastructure/redis/connect";
 import { appConfig } from "../../config/app.config";
+import { ErrorStatusCode } from "../../shared/errors/errorCode";
 export const login = async (req: Request, res: Response) => {
   try {
     const loginData = req.body as LoginData;
@@ -45,7 +46,6 @@ export const login = async (req: Request, res: Response) => {
         },
       },
     );
-    user;
     const { password, ...responseData } = user;
     res.status(200).json({
       ...responseData,
@@ -56,4 +56,33 @@ export const login = async (req: Request, res: Response) => {
   } catch (e) {
     throw new AppError(ErrorCodes.INTERNAL_SERVER_ERROR, (e as Error).message);
   }
+};
+
+export const logout = async (req: Request, res: Response) => {
+  const authToken = req.authToken as string;
+  const redisClient = await createRedis;
+  const refeshToken = await redisClient.get(
+    appConfig.redis.key.refeshToken(req.user?.id as string),
+  );
+  if (!refeshToken) {
+    throw new AppError(
+      ErrorMessages.BAD_REQUEST,
+      ErrorMessages.REFESH_TOKEN_NOTFOUND,
+      ErrorStatusCode.BAD_REQUEST,
+    );
+  }
+  await Promise.all([
+    // blacklist
+    redisClient.set(appConfig.redis.key.authToken(authToken), "true", {
+      expiration: {
+        type: "EX",
+        value: appConfig.redis.authExpiration,
+      },
+    }),
+    // remove refeh token
+    redisClient.del(refeshToken),
+  ]);
+  res.status(200).json({
+    status: "successfull",
+  });
 };

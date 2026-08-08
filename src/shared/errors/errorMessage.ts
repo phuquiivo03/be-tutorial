@@ -59,4 +59,8 @@ export const ErrorMessages = {
   BAD_REQUEST: "Bad request",
   NOT_FOUND: "Not found",
   INVALID_CREADENTIAL: "Invalid auth creadential",
+  //Auth
+  UN_AUTHORISED: "unauthorised",
+  AUTH_TOKEN_EXPIRED: "Authen token had been expired",
+  REFESH_TOKEN_NOTFOUND: "Refesh token not found",
 };

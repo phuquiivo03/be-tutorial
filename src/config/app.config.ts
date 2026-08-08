@@ -7,9 +7,15 @@ const redis: RedisConfig = {
   password: process.env.REDIS_PASSWORD || "",
   host: process.env.REDIS_HOST || "",
   port: process.env.REDIS_PORT || "",
-  expiration: (parseInt(process.env.REDIS_REFESH_TOKEN_EXPIRATION || "1") || 1) * 24 * 3600,
+  expiration:
+    (parseInt(process.env.REDIS_REFESH_TOKEN_EXPIRATION || "1") || 1) *
+    24 *
+    3600,
+  authExpiration:
+    (parseInt(process.env.REDIS_AUTH_TOKEN_EXPIRATION || "1") || 1) * 24 * 3600,
   key: {
     refeshToken: (id) => `refesh_auth_token_${id}`,
+    authToken: (id) => `auth_token_${id}`,
   },
 };
 

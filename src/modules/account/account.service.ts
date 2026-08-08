@@ -5,7 +5,7 @@ import { Account } from "./account.type";
 import { ErrorMessages } from "../../shared/errors/errorMessage";
 import { Prisma } from "@prisma/client";
 import { AppError } from "../../shared/errors/Error";
-import { ErrorCodes } from "../../shared/errors/errorCode";
+import { ErrorCodes, ErrorStatusCode } from "../../shared/errors/errorCode";
 
 class AccountService {
   async createAccount(userId: string, currency: string) {
@@ -18,6 +18,7 @@ class AccountService {
       throw new AppError(
         ErrorCodes.FAILED_TO_CREATE_ACCOUNT,
         ErrorMessages.FAILED_TO_CREATE_ACCOUNT,
+        ErrorStatusCode.BAD_REQUEST,
         false,
       );
     }
