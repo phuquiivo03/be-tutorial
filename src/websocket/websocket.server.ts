@@ -1,24 +1,21 @@
 import { Server as HTTPServer } from "http";
 import { WebSocketServer } from "ws";
-
-import { handleConnection } from "./handlers/connection.handlers";
-import { handleMessage } from "./handlers/message.handlers";
+import { handleConnection } from "./connection/connection.handlers";
+import { authenSocketConnection } from "./middleware/auth";
 
 export const setupWebSocket = (server: HTTPServer) => {
   const wss = new WebSocketServer({
-    server,
-    path: "/ws",
+    noServer: true,
   });
 
-  wss.on("connection", (socket, request) => {
-    handleConnection(socket, request);
-
-    socket.on("message", (data) => {
-      handleMessage(socket, data);
-    });
-
-    socket.on("close", () => {
-      console.log("Client disconnected");
-    });
+  server.on("upgrade", async (request, socket, head) => {
+    try {
+      const userData = await authenSocketConnection(request);
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        handleConnection(ws, userData, request);
+      });
+    } catch (error) {
+      socket.destroy();
+    }
   });
 };
