@@ -31,7 +31,6 @@ class TransactionHelper {
       }
       return { senderAccount, receiverAccount };
     } catch (error) {
-      console.error("Error in validTRansfer", error.message);
       throw error;
     }
   }

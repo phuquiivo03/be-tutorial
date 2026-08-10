@@ -11,12 +11,6 @@ import { Prisma } from "@prisma/client";
 import { TransactionStatus, TransferRoles } from "../modules/transaction";
 import amqp from "amqplib";
 import { ErrorMessages } from "../shared/errors/errorMessage";
-import {
-  handleRetry,
-  handlePendingJob,
-  handleCancelJob,
-  handleDeadLockError,
-} from "./helper";
 import JobService from "../modules/job/job.service";
 import { JobStatus } from "../modules/job/job.dto";
 import prisma from "../infrastructure/prisma/connect";
@@ -27,7 +21,7 @@ import {
   getErrorStrategy,
   normalizeError,
 } from "../shared/errors/error.helper";
-import { errorStrategies } from "../shared/errors/error.strategies";
+import websocketGateway from "../websocket/gateway/websocket.gateway";
 
 export const transferWorker = async () => {
   const channel = await connectQueue();
@@ -69,6 +63,14 @@ export const transferWorker = async () => {
       // ack the message
       channel.ack(msg as amqp.Message);
       console.log("Transaction completed");
+      // send notification -> sender
+      websocketGateway.sendNotification(
+        (job.data as Transfer).fromUserId,
+        JSON.stringify({
+          title: "Transfer notification",
+          description: "Transfer successfully✅✅☑️",
+        }),
+      );
     });
   });
 };

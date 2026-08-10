@@ -7,7 +7,7 @@ export function parseOrThrow<T>(schema: Zod.ZodSchema<T>, data: unknown): T {
   if (!parseResult.success) {
     throw new AppError(
       ErrorMessages.FAILED_TO_PARSE_DATA,
-      ErrorMessages.FAILED_TO_PARSE_DATA,
+      `${parseResult.error.issues.map((error) => error.message)}`,
       ErrorStatusCode.BAD_REQUEST,
     );
   }

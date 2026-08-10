@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 
-class ConnectionManager {
+export class ConnectionManager {
   private connections = new Map<string, WebSocket>();
 
   add(id: string, socket: WebSocket) {

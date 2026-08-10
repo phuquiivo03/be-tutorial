@@ -35,6 +35,13 @@ class AccountService {
     const account = await prisma.account.findUnique({
       where: { userId },
     });
+    if (!account) {
+      throw new AppError(
+        ErrorCodes.BAD_REQUEST,
+        ErrorMessages.ACCOUNT_NOT_FOUND,
+        ErrorStatusCode.BAD_REQUEST,
+      );
+    }
     return parseOrThrow<Account>(accountSchema, account);
   }
   async lockAccount(id: string, tx: Prisma.TransactionClient): Promise<void> {
