@@ -22,6 +22,7 @@ import {
   normalizeError,
 } from "../shared/errors/error.helper";
 import websocketGateway from "../websocket/gateway/websocket.gateway";
+import { sendTransactionNotification } from "./helper";
 
 export const transferWorker = async () => {
   const channel = await connectQueue();
@@ -50,7 +51,7 @@ export const transferWorker = async () => {
           ErrorMessages.JOB_UPDATED_FAILED,
         );
       const job = await JobService.get(data.id);
-      await processTransaction(job);
+      const transferData = await processTransaction(job);
       // update job status to completed
       // if worker crash here, the job will be re-excute by the worker
       // if crash here, the job will be pending forever (not re-excute, not failed)
@@ -64,13 +65,7 @@ export const transferWorker = async () => {
       channel.ack(msg as amqp.Message);
       console.log("Transaction completed");
       // send notification -> sender
-      websocketGateway.sendNotification(
-        (job.data as Transfer).fromUserId,
-        JSON.stringify({
-          title: "Transfer notification",
-          description: "Transfer successfully✅✅☑️",
-        }),
-      );
+      await sendTransactionNotification(transferData);
     });
   });
 };
@@ -97,7 +92,7 @@ async function handleError(
   }
 }
 
-async function processTransaction(data: Job) {
+async function processTransaction(data: Job): Promise<Transfer> {
   const transferData = parseOrThrow<Transfer>(transferSchema, data.data);
   await prisma.$transaction(async (tx) => {
     const { senderAccount, receiverAccount } =
@@ -136,4 +131,5 @@ async function processTransaction(data: Job) {
       tx,
     );
   });
+  return transferData;
 }

@@ -6,6 +6,11 @@ import { JobStatus } from "../modules/job/job.dto";
 import amqp from "amqplib";
 import { Job } from "../modules/job/job.type";
 import { ErrorCodes } from "../shared/errors/errorCode";
+import { CurrencyEnum, Transfer } from "../modules/transaction";
+import entryService from "../modules/entry/entry.service";
+import accountService from "../modules/account/account.service";
+import websocketGateway from "../websocket/gateway/websocket.gateway";
+import { convertMoney } from "../utils";
 export async function handleRetry(
   msg: amqp.Message,
   channel: amqp.Channel,
@@ -44,7 +49,6 @@ export async function handlePendingJob(
       channel.ack(msg as amqp.Message);
     }
   } catch (error) {
-    console.error(error.message);
     handleRetry(msg, channel, retryQueueName);
   }
 }
@@ -68,4 +72,29 @@ export async function handleDeadLockError(
   if (error.message.includes(ErrorCodes.DEAD_LOCK)) {
     handleRetry(msg, channel, retryQueueName);
   }
+}
+
+export async function sendTransactionNotification(transferData: Transfer) {
+  const [fromAccount, toAccount] = await Promise.all([
+    accountService.findByUserId(transferData.fromUserId),
+    accountService.findByUserId(transferData.toUserId),
+  ]);
+  const [senderBalance, receiverBalance] = await Promise.all([
+    entryService.getBalanceByAccountId(fromAccount.id),
+    entryService.getBalanceByAccountId(toAccount.id),
+  ]);
+  websocketGateway.sendNotification(
+    transferData.fromUserId,
+    JSON.stringify({
+      title: "Transfer notification",
+      description: `Transfer successfully✅✅☑️ \n Balance -${convertMoney(transferData.amount, CurrencyEnum.VND)} \n New balance: ${convertMoney(senderBalance, CurrencyEnum.VND)}`,
+    }),
+  );
+  websocketGateway.sendNotification(
+    transferData.toUserId,
+    JSON.stringify({
+      title: "Transfer notification",
+      description: `Transfer successfully✅✅☑️ \n Balance +${convertMoney(transferData.amount, CurrencyEnum.VND)} \n New balance: ${convertMoney(receiverBalance, CurrencyEnum.VND)}`,
+    }),
+  );
 }

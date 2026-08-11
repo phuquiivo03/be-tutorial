@@ -33,7 +33,7 @@ class EntryService {
     return parseOrThrow<Entry>(EntrySchema, entry);
   }
 
-  async getByAccountId(accountId: string): Promise<Entry[]> {
+  async getEntriesByAccountId(accountId: string): Promise<Entry[]> {
     const entries = await prisma.entry.findMany({
       where: { accountId },
     });
@@ -41,7 +41,7 @@ class EntryService {
   }
 
   async getBalanceByAccountId(accountId: string): Promise<Prisma.Decimal> {
-    const result = await this.getByAccountId(accountId);
+    const result = await this.getEntriesByAccountId(accountId);
     return result.reduce(
       (acc, entry) => acc.add(entry.amount),
       Prisma.Decimal("0"),
