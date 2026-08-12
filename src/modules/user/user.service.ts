@@ -50,6 +50,10 @@ class UserService {
     });
   }
 
+  async findAll(options: Prisma.UserFindManyArgs) {
+    return prisma.user.findMany(options);
+  }
+
   async updateUser(userId: string, input: UpdateUserInput) {
     const userData = {
       ...(input.name !== undefined ? { name: input.name } : {}),
