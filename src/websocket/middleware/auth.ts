@@ -6,7 +6,10 @@ import { RequestUser } from "../../modules/user/user.type";
 export const authenSocketConnection = async (
   request: IncomingMessage,
 ): Promise<RequestUser> => {
-  const authToken = request.headers["x-token"] as string;
+  const host = request.headers.host;
+  const fullUrl = `http://${host}${request.url}`;
+  const { searchParams } = new URL(fullUrl);
+  const authToken = searchParams.get("authToken");
   if (!authToken) {
     throw new AppError(ErrorCodes.BAD_REQUEST, ErrorMessages.UN_AUTHORISED);
   }

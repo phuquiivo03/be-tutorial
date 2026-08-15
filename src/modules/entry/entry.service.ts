@@ -2,6 +2,7 @@ import prisma from "../../infrastructure/prisma/connect";
 import { parseOrThrow } from "../../utils";
 import { EntrySchema, CreateEntry, Entry } from "../transaction";
 import { Prisma } from "@prisma/client";
+import { FindManyEntriesOptions } from "./entry.type";
 
 class EntryService {
   async create(
@@ -46,6 +47,10 @@ class EntryService {
       (acc, entry) => acc.add(entry.amount),
       Prisma.Decimal("0"),
     );
+  }
+
+  async findMany(options: FindManyEntriesOptions): Promise<Entry[]> {
+    return prisma.entry.findMany(options);
   }
 }
 export default new EntryService();

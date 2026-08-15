@@ -23,7 +23,7 @@ export class ConnectionManager {
     if (socket.readyState !== WebSocket.OPEN) {
       return;
     }
-
+    
     socket.send(JSON.stringify(message));
   }
 }

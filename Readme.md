@@ -8,3 +8,6 @@ docker run -d \
   -p 15672:15672 \
   rabbitmq:3-management
 ```
+
+transaction history
+getByUser(authtoken) => Transaction(Entry(Account))

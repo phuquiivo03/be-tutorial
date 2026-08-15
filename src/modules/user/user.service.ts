@@ -1,5 +1,10 @@
 import prisma from "../../infrastructure/prisma/connect";
-import { CreateUserInput, UpdateUserInput, User } from "./user.type";
+import {
+  CreateUserInput,
+  FindManyUsersOptions,
+  UpdateUserInput,
+  User,
+} from "./user.type";
 import { parseOrThrow } from "../../utils";
 import { userSchema } from "./user.schema";
 import { ErrorMessages } from "../../shared/errors/errorMessage";
@@ -50,7 +55,7 @@ class UserService {
     });
   }
 
-  async findAll(options: Prisma.UserFindManyArgs) {
+  async findAll(options: FindManyUsersOptions) {
     return prisma.user.findMany(options);
   }
 

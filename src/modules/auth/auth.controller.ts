@@ -48,9 +48,12 @@ export const login = async (req: Request, res: Response) => {
     );
     const { password, ...responseData } = user;
     res.status(200).json({
-      ...responseData,
-      authenToken,
-      refeshToken,
+      status: "successfull",
+      data: {
+        ...responseData,
+        authenToken,
+        refeshToken,
+      },
     });
     // response
   } catch (e) {

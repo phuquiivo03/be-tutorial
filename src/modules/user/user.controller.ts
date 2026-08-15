@@ -27,7 +27,6 @@ export const getUser = async (req: Request, res: Response) => {
 
 export const findAll = async (req: Request, res: Response) => {
   const options = JSON.parse(req.query.options as string);
-  console.log(options);
   const users = await userService.findAll(options);
   return res.status(200).json({
     status: "successful",
