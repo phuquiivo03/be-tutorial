@@ -1,6 +1,4 @@
 export const ErrorMessages = {
-  FAILED_TO_MINT_NFT: "Failed to mint NFT",
-  FAILED_TO_RESIZE_IMAGE: "Failed to resize image",
   FAILED_TO_CREATE_JOB: "Failed to create job",
   FAILED_TO_GET_JOB: "Failed to get job",
   FAILED_TO_UPDATE_JOB: "Failed to update job",
