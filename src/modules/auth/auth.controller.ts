@@ -1,13 +1,19 @@
 import { NextFunction, Request, Response } from "express";
 import userService from "../user/user.service";
-import { hash, compare } from "../../utils/hashing";
+import { compare } from "../../utils/hashing";
 import { LoginData } from "./auth.type";
 import { AppError, ErrorCodes, ErrorMessages } from "../../shared/errors";
 import JWTService from "../../utils/jwt";
 import createRedis from "../../infrastructure/redis/connect";
 import { appConfig } from "../../config/app.config";
 import { ErrorStatusCode } from "../../shared/errors/errorCode";
-export const login = async (req: Request, res: Response) => {
+import { CustomExpress } from "../../pkg/app/response";
+export const login = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const customExpress = new CustomExpress(req, res, next);
   try {
     const loginData = req.body as LoginData;
     // check
@@ -47,13 +53,10 @@ export const login = async (req: Request, res: Response) => {
       },
     );
     const { password, ...responseData } = user;
-    res.status(200).json({
-      status: "successfull",
-      data: {
-        ...responseData,
-        authenToken,
-        refeshToken,
-      },
+    customExpress.response200({
+      ...responseData,
+      authenToken,
+      refeshToken,
     });
     // response
   } catch (e) {
@@ -61,7 +64,12 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-export const logout = async (req: Request, res: Response) => {
+export const logout = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const customExpress = new CustomExpress(req, res, next);
   const authToken = req.authToken as string;
   const redisClient = await createRedis;
   const refeshToken = await redisClient.get(
@@ -85,7 +93,7 @@ export const logout = async (req: Request, res: Response) => {
     // remove refeh token
     redisClient.del(refeshToken),
   ]);
-  res.status(200).json({
+  customExpress.response200({
     status: "successfull",
   });
 };

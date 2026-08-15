@@ -1,13 +1,14 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { AppError } from "../errors/Error";
-import { ErrorCodes } from "../errors/errorCode";
-import { ErrorMessages } from "../errors/errorMessage";
+import { ErrorStatusCode } from "../errors/errorCode";
+import { CustomExpress } from "../../pkg/app/response";
 export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
+  const customExpress = new CustomExpress(req, res, next);
   // normalize error
   if (err instanceof AppError) {
     // log
@@ -18,19 +19,20 @@ export const errorHandler = (
       statusCode: req.path,
     });
     //response
-    res.status(err.statusCode).json({
-      success: false,
-      error: {
-        code: err.code,
-        message: err.message,
-      },
-    });
+    if (err.statusCode == 400) {
+      customExpress.response400(ErrorStatusCode.BAD_REQUEST, {
+        reason: err.message,
+      });
+    } else {
+      customExpress.response500(ErrorStatusCode.INTERNAL_SERVER_ERROR, {
+        reason: err.message,
+      });
+    }
     return;
   }
 
-  res.status(500).json({
-    code: ErrorCodes.INTERNAL_SERVER_ERROR,
-    message: ErrorMessages.INTERNAL_SERVER_ERROR,
+  customExpress.response500(ErrorStatusCode.INTERNAL_SERVER_ERROR, {
+    reason: err.message,
   });
 };
 

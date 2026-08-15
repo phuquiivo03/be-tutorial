@@ -1,4 +1,4 @@
-import { Request, Response, RequestHandler } from "express";
+import { Request, Response, RequestHandler, NextFunction } from "express";
 import { Transfer } from "./transaction.type";
 import JobService from "../job/job.service";
 import TransactionHelper from "./transaction.helper";
@@ -8,7 +8,13 @@ import { ErrorStatusCode } from "../../shared/errors/errorCode";
 import entryService from "../entry/entry.service";
 import { FindManyQueryParam } from "../../shared/types/query";
 import { FindManyEntriesOptions } from "../entry/entry.type";
-export const transfer = async (req: Request, res: Response) => {
+import { CustomExpress } from "../../pkg/app/response";
+export const transfer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const customExpress = new CustomExpress(req, res, next);
   const data: Transfer = req.body;
   // check sender balance
   await TransactionHelper.validTRansfer(data);
@@ -16,13 +22,15 @@ export const transfer = async (req: Request, res: Response) => {
     action: MQActions.TRANSFER,
     data: data as unknown as JSON,
   });
-  res.status(200).json({
-    message: "Transaction Successful!",
-    data: { ...job },
-  });
+  customExpress.response200(job);
 };
 
-export const getHistoryByUser = async (req: Request, res: Response) => {
+export const getHistoryByUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const customExpress = new CustomExpress(req, res, next);
   try {
     const queryParams: FindManyQueryParam = JSON.parse(
       req.query.options as string,
@@ -52,10 +60,7 @@ export const getHistoryByUser = async (req: Request, res: Response) => {
       },
     };
     const entries = await entryService.findMany(findOptions);
-    res.status(200).json({
-      status: "success",
-      data: entries,
-    });
+    customExpress.response200(entries);
   } catch (e) {
     throw new AppError(
       ErrorCodes.INTERNAL_SERVER_ERROR,

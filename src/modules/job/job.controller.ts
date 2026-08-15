@@ -1,14 +1,21 @@
+import { CustomExpress } from "../../pkg/app/response";
+import { ErrorStatusCode } from "../../shared/errors/errorCode";
 import JobService from "./job.service";
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 export const getJobById = async (
   req: Request,
   res: Response,
+  next: NextFunction,
 ): Promise<void> => {
+  const customExpress = new CustomExpress(req, res, next);
   try {
     const { id } = req.params as { id: string };
     const job = await JobService.find(id);
-    res.status(200).json({ data: job });
+    customExpress.response200({ data: job });
   } catch (error) {
-    res.status(500).json({ message: "Failed to get job", error });
+    customExpress.response500(ErrorStatusCode.INTERNAL_SERVER_ERROR, {
+      message: "Failed to get job",
+      error,
+    });
   }
 };
